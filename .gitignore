@@ -1,0 +1,27 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Mac system files
+.DS_Store
+
+# Build output
+/dist
+/build
+
+# PostgreSQL
+*.sql
+
+# Optional: Add any other directories or files that should not be tracked
