@@ -1,0 +1,204 @@
+// prisma/schema.prisma
+
+// Define the datasource
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Define the generator
+generator client {
+  provider = "prisma-client-js"
+}
+
+model BusinessPlans {
+  id             Int              @id @default(autoincrement())
+  name           String           @unique @db.VarChar(100)
+  price          Float
+  priceTrial     Float?           @map("pricetrial")
+  priceMonthly   Float?           @map("pricemonthly")
+  price3Month    Float?           @map("price3month")
+  price6Month    Float?           @map("price6month")
+  priceYearly    Float?           @map("priceyearly")
+  currency       String           @db.VarChar(3)
+  features       String?          @db.Text
+  createdAt      DateTime         @default(now()) @map("createdat")
+  updatedAt      DateTime         @default(now()) @updatedAt @map("updatedat")
+  Businesses     Businesses[]
+  PaymentHistory PaymentHistory[]
+
+  @@map("businessplans")
+}
+
+model Retailers {
+  id              Int       @id @default(autoincrement())
+  firstName       String    @db.VarChar(50)
+  lastName        String    @db.VarChar(50)
+  email           String    @unique @db.VarChar(100)
+  isdCode         String?   @map("isdcode") @db.VarChar(5)
+  phoneNumber     String?   @map("phonenumber") @db.VarChar(15)
+  isEmailVerified Boolean   @default(false) @map("isemailverified")
+  isPhoneVerified Boolean   @default(false) @map("isphoneverified")
+  username        String    @unique @db.VarChar(50)
+  password        String    @db.VarChar(255)
+  roleId          Int       @map("roleid")
+  createdAt       DateTime  @default(now()) @map("createdat")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updatedat")
+  isActive        Boolean   @default(true) @map("isactive")
+  isDeleted       Boolean   @default(false) @map("isdeleted")
+  lastActiveAt    DateTime? @map("lastactiveat")
+
+  role            Roles             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  Businesses      Businesses[]
+  LoginHistory    LoginHistory[]
+  PaymentHistory  PaymentHistory[]
+  OtpVerification OtpVerification[]
+
+  @@map("retailers")
+}
+
+model Businesses {
+  id             Int       @id @default(autoincrement())
+  retailerId     Int       @map("retailerid")
+  name           String    @db.VarChar(100)
+  businessKey    String    @unique @map("businesskey") @db.VarChar(100)
+  categoryId     Int       @map("categoryid")
+  typeId         Int       @map("typeid")
+  startMonth     Int?      @map("startmonth")
+  startYear      Int?      @map("startyear")
+  currentRevenue Float?    @map("currentrevenue")
+  address1       String?   @db.VarChar(255)
+  address2       String?   @db.VarChar(255)
+  city           String?   @db.VarChar(100)
+  state          String?   @db.VarChar(100)
+  country        String?   @db.VarChar(100)
+  planId         Int       @map("planid")
+  isActive       Boolean?  @map("isactive")
+  isDeleted      Boolean?  @map("isdeleted")
+  isActivePlan   Boolean?  @map("isactiveplan")
+  isPaidPlan     Boolean?  @map("ispaidplan")
+  subscribeAt    DateTime? @map("subscribeat")
+  unsubscribeAt  DateTime? @map("unsubscribeat")
+  planValidTill  DateTime? @map("planvalidtill")
+  createdAt      DateTime  @map("createdat")
+  updatedAt      DateTime  @updatedAt @map("updatedat")
+
+  retailer        Retailers          @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  category        BusinessCategories @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  plan            BusinessPlans      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  type            BusinessTypes      @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  LoginHistory    LoginHistory[]
+  PaymentHistory  PaymentHistory[]
+  OtpVerification OtpVerification[]
+
+  @@map("businesses")
+}
+
+model BusinessCategories {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("createdat")
+
+  businesses Businesses[]
+
+  @@map("businesscategories")
+}
+
+model BusinessTypes {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("createdat")
+
+  businesses Businesses[]
+
+  @@map("businesstypes")
+}
+
+model LoginHistory {
+  id          Int      @id @default(autoincrement())
+  retailerId  Int      @map("retailerid")
+  businessId  Int      @map("businessid")
+  loginAt     DateTime @default(now()) @map("loginat")
+  ipAddress   String?  @map("ipaddress") @db.Inet
+  userAgent   String?  @map("useragent") @db.VarChar(255)
+  city        String?  @db.VarChar(100)
+  country     String?  @db.VarChar(100)
+  latitude    Float?
+  longitude   Float?
+  status      String   @db.VarChar(20)
+  loginSource String?  @map("loginsource") @db.VarChar(50)
+  loginMethod String?  @map("loginmethod") @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("createdat")
+  updatedAt   DateTime @updatedAt @map("updatedat")
+
+  retailer Retailers  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  business Businesses @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("loginhistory")
+}
+
+model Roles {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+
+  retailers Retailers[]
+
+  @@map("roles")
+}
+
+model PaymentHistory {
+  id                Int      @id @default(autoincrement())
+  paymentId         String   @unique
+  orderId           String
+  signature         String
+  retailerId        Int?
+  businessId        Int?
+  amount            Decimal  @map("amount") @db.Decimal(10, 2)
+  currency          String   @db.VarChar(10)
+  paymentMethod     String   @db.VarChar(50)
+  paymentStatus     String   @db.VarChar(20)
+  transactionId     String?
+  paymentDate       DateTime @default(now())
+  subscriptionId    String?
+  planId            Int?
+  amountPaid        Decimal  @map("amountpaid") @db.Decimal(10, 2)
+  taxAmount         Decimal? @map("taxamount") @db.Decimal(10, 2)
+  paymentReceiptUrl String?  @db.VarChar(255)
+  isRefunded        Boolean  @default(false)
+  refundAmount      Decimal? @db.Decimal(10, 2)
+  paymentMode       String?  @db.VarChar(50)
+  failureReason     String?
+  isRecurring       Boolean  @default(false)
+  metadata          Json?
+  cardType          String?  @db.VarChar(20)
+  cardNetwork       String?  @db.VarChar(20)
+  cardIssuer        String?  @db.VarChar(100)
+  maskedCardNumber  String?  @db.VarChar(19)
+  cardExpiryDate    String?  @db.VarChar(5)
+  transactionSource String?  @db.VarChar(50)
+  isCardPayment     Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+
+  retailer Retailers?     @relation(fields: [retailerId], references: [id])
+  business Businesses?    @relation(fields: [businessId], references: [id])
+  plan     BusinessPlans? @relation(fields: [planId], references: [id])
+}
+
+model OtpVerification {
+  id             Int       @id @default(autoincrement())
+  retailerId     Int
+  businessId     Int
+  otp            String    @db.VarChar(6)
+  otpType        String    @db.VarChar(50)
+  isVerified     Boolean   @default(false)
+  attemptCount   Int       @default(0)
+  expirationTime DateTime
+  generatedAt    DateTime  @default(now())
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  retailer Retailers  @relation(fields: [retailerId], references: [id])
+  business Businesses @relation(fields: [businessId], references: [id])
+}
